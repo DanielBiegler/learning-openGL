@@ -1,1 +1,1 @@
-Cherno-OpenGL
+Just learning openGL, nothing more, nothing less.
