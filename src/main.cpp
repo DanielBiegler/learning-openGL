@@ -42,6 +42,19 @@ int main(int argc, char *argv[])
 						 0.5f, -0.5f};
 	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), position, GL_STATIC_DRAW);
 
+	/* we have to explicitly enable the vertex attribute array
+	 * since its disabled by default. we only have a single one so we can pass '0'.
+	 */
+	glEnableVertexAttribArray(0);
+	/* 0. index: we only have one attribute(positions) so we can start from 0
+	 * 1. size: component count aka 2 floats per attribute
+	 * 2. type: we use floats, so use GL_FLOAT
+	 * 3. normalized: our floats are already normalized(0..1) so GL_FALSE
+	 * 4. stride: amount of bytes between each vertex, 2 floats = 8 bytes
+	 * 5. pointer: this is the first and only attribute, so use 0
+	 */
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
