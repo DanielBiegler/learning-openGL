@@ -2,6 +2,37 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+static unsigned int compile_shader(unsigned int type, const std::string &source)
+{
+	unsigned int id = glCreateShader(type);
+	const char *src = source.c_str();
+	/* 0. shader: the id of the shader
+	 * 1. count: how many shaders
+	 * 2. string: pointer to the pointer of the source
+	 * 3. length: passing null makes that opengl assumes the source is null-terminated
+	 */
+	glShaderSource(id, 1, &src, nullptr);
+	glCompileShader(id);
+
+	/* Error checking */
+	int result;
+	glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+	if (result == GL_FALSE)
+	{
+		int length;
+		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+		char *msg = (char *)alloca(length * sizeof(char));
+		glGetShaderInfoLog(id, length, &length, msg);
+		std::cout << "Failed to compile shader of type: " << type << std::endl;
+		std::cout << msg << std::endl;
+
+		glDeleteShader(id);
+		return GL_FALSE;
+	}
+
+	return id;
+}
+
 static unsigned int create_shader(const std::string &vertex_shader, const std::string &fragment_shader)
 {
 	unsigned int program = glCreateProgram();
