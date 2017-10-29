@@ -2,6 +2,59 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+static unsigned int compile_shader(unsigned int type, const std::string &source)
+{
+	unsigned int id = glCreateShader(type);
+	const char *src = source.c_str();
+	/* 0. shader: the id of the shader
+	 * 1. count: how many shaders
+	 * 2. string: pointer to the pointer of the source
+	 * 3. length: passing null makes that opengl assumes the source is null-terminated
+	 */
+	glShaderSource(id, 1, &src, nullptr);
+	glCompileShader(id);
+
+	/* Error checking */
+	int result;
+	glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+	if (result == GL_FALSE)
+	{
+		int length;
+		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+		char *msg = (char *)alloca(length * sizeof(char));
+		glGetShaderInfoLog(id, length, &length, msg);
+		std::cout << "Failed to compile shader of type: " << type << std::endl;
+		std::cout << msg << std::endl;
+
+		glDeleteShader(id);
+		return GL_FALSE;
+	}
+
+	return id;
+}
+
+static unsigned int create_shader(const std::string &vertex_shader, const std::string &fragment_shader)
+{
+	unsigned int program = glCreateProgram();
+	unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
+	unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
+
+	glAttachShader(program, vs);
+	glAttachShader(program, fs);
+	glLinkProgram(program);
+	glValidateProgram(program);
+
+	/* After linking one technically should call `glDetachShader`
+	 * but technically its not necessary.
+	 */
+
+	// this deletes the intermediate data
+	glDeleteShader(vs);
+	glDeleteShader(fs);
+
+	return program;
+}
+
 int main(int argc, char *argv[])
 {
 	GLFWwindow *window;
@@ -42,6 +95,40 @@ int main(int argc, char *argv[])
 						 0.5f, -0.5f};
 	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), position, GL_STATIC_DRAW);
 
+	/* we have to explicitly enable the vertex attribute array
+	 * since its disabled by default. we only have a single one so we can pass '0'.
+	 */
+	glEnableVertexAttribArray(0);
+	/* 0. index: we only have one attribute(positions) so we can start from 0
+	 * 1. size: component count aka 2 floats per attribute
+	 * 2. type: we use floats, so use GL_FLOAT
+	 * 3. normalized: our floats are already normalized(0..1) so GL_FALSE
+	 * 4. stride: amount of bytes between each vertex, 2 floats = 8 bytes
+	 * 5. pointer: this is the first and only attribute, so use 0
+	 */
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
+	std::string vertex_shader =
+		"#version 320 es\n"
+		"\n"
+		"layout(location = 0) in vec4 position;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	gl_Position = position;\n"
+		"}\n";
+	std::string fragment_shader =
+		"#version 320 es\n"
+		"\n"
+		"layout(location = 0) out lowp vec4 color;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+		"}\n";
+	unsigned int shader = create_shader(vertex_shader, fragment_shader);
+	glUseProgram(shader);
+
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -61,6 +148,7 @@ int main(int argc, char *argv[])
 		glfwPollEvents();
 	}
 
+	glDeleteProgram(shader);
 	glfwTerminate();
 
 	return 0;
