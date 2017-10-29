@@ -108,6 +108,27 @@ int main(int argc, char *argv[])
 	 */
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
+	std::string vertex_shader =
+		"#version 320 es\n"
+		"\n"
+		"layout(location = 0) in vec4 position;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	gl_Position = position;\n"
+		"}\n";
+	std::string fragment_shader =
+		"#version 320 es\n"
+		"\n"
+		"layout(location = 0) out lowp vec4 color;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+		"}\n";
+	unsigned int shader = create_shader(vertex_shader, fragment_shader);
+	glUseProgram(shader);
+
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -127,6 +148,7 @@ int main(int argc, char *argv[])
 		glfwPollEvents();
 	}
 
+	glDeleteProgram(shader);
 	glfwTerminate();
 
 	return 0;
