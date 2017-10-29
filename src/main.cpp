@@ -2,6 +2,28 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+static unsigned int create_shader(const std::string &vertex_shader, const std::string &fragment_shader)
+{
+	unsigned int program = glCreateProgram();
+	unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
+	unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
+
+	glAttachShader(program, vs);
+	glAttachShader(program, fs);
+	glLinkProgram(program);
+	glValidateProgram(program);
+
+	/* After linking one technically should call `glDetachShader`
+	 * but technically its not necessary.
+	 */
+
+	// this deletes the intermediate data
+	glDeleteShader(vs);
+	glDeleteShader(fs);
+
+	return program;
+}
+
 int main(int argc, char *argv[])
 {
 	GLFWwindow *window;
