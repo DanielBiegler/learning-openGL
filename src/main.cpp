@@ -1,6 +1,56 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+struct Shader_program_source
+{
+	std::string vertex_source;
+	std::string fragment_source;
+};
+
+static Shader_program_source parse_shader_file(const std::string &filepath)
+{
+	enum class Shader_type
+	{
+		NONE = -1,
+		VERTEX = 0,
+		FRAGMENT = 1
+	};
+
+	/* file content of shader file */
+	std::ifstream stream(filepath);
+	/* current working line */
+	std::string line;
+	/* one stream for vertex and one for fragment shader */
+	std::stringstream strstream[2];
+	/* current read shaderype */
+	Shader_type shader_type = Shader_type::NONE;
+	while (getline(stream, line))
+	{
+		std::cout << line << std::endl;
+
+		if (line.find("#shader") != std::string::npos)
+		{
+			if (line.find("vertex") != std::string::npos)
+			{
+				shader_type = Shader_type::VERTEX;
+			}
+			else if (line.find("fragment") != std::string::npos)
+			{
+				shader_type = Shader_type::FRAGMENT;
+			}
+		}
+		else
+		{
+			strstream[(int)shader_type] << line << '\n';
+		}
+	}
+
+	return {strstream[0].str(), strstream[1].str()};
+}
 
 static unsigned int compile_shader(unsigned int type, const std::string &source)
 {
