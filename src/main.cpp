@@ -1,6 +1,56 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+struct Shader_program_source
+{
+	std::string vertex_source;
+	std::string fragment_source;
+};
+
+static Shader_program_source parse_shader_file(const std::string &filepath)
+{
+	enum class Shader_type
+	{
+		NONE = -1,
+		VERTEX = 0,
+		FRAGMENT = 1
+	};
+
+	/* file content of shader file */
+	std::ifstream stream(filepath);
+	/* current working line */
+	std::string line;
+	/* one stream for vertex and one for fragment shader */
+	std::stringstream strstream[2];
+	/* current read shaderype */
+	Shader_type shader_type = Shader_type::NONE;
+	while (getline(stream, line))
+	{
+		std::cout << line << std::endl;
+
+		if (line.find("#shader") != std::string::npos)
+		{
+			if (line.find("vertex") != std::string::npos)
+			{
+				shader_type = Shader_type::VERTEX;
+			}
+			else if (line.find("fragment") != std::string::npos)
+			{
+				shader_type = Shader_type::FRAGMENT;
+			}
+		}
+		else
+		{
+			strstream[(int)shader_type] << line << '\n';
+		}
+	}
+
+	return {strstream[0].str(), strstream[1].str()};
+}
 
 static unsigned int compile_shader(unsigned int type, const std::string &source)
 {
@@ -108,25 +158,8 @@ int main(int argc, char *argv[])
 	 */
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
-	std::string vertex_shader =
-		"#version 320 es\n"
-		"\n"
-		"layout(location = 0) in vec4 position;\n"
-		"\n"
-		"void main()\n"
-		"{\n"
-		"	gl_Position = position;\n"
-		"}\n";
-	std::string fragment_shader =
-		"#version 320 es\n"
-		"\n"
-		"layout(location = 0) out lowp vec4 color;\n"
-		"\n"
-		"void main()\n"
-		"{\n"
-		"	color = vec4(1.0, 0.0, 0.0, 1.0);\n"
-		"}\n";
-	unsigned int shader = create_shader(vertex_shader, fragment_shader);
+	Shader_program_source shader_program_source = parse_shader_file("res/shader/basic.shader");
+	unsigned int shader = create_shader(shader_program_source.vertex_source, shader_program_source.fragment_source);
 	glUseProgram(shader);
 
 	/* Loop until the user closes the window */
