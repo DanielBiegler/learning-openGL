@@ -139,11 +139,17 @@ int main(int argc, char *argv[])
 	glGenBuffers(1, &buffer);
 	/* Bind it so the next draw call will act on this buffer */
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	/* Create the indices for the triangle and set the data inside the buffer */
-	float position[6] = {-0.5f, -0.5f,
-						 0.0f, 0.5f,
-						 0.5f, -0.5f};
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), position, GL_STATIC_DRAW);
+	/* Create the indices for the rectangle and set the data inside the buffer.
+	 * We draw two triangles to create one rectangle.
+	 * We reuse two indices via the index_buffer, this is why only have 4 positions instead of 6
+	 * see: index_buffer_object 
+	 */
+	float position[] = {-0.5f, -0.5f,
+						0.5f, -0.5f,
+						0.5f, 0.5f,
+						-0.5f, 0.5f};
+
+	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), position, GL_STATIC_DRAW);
 
 	/* we have to explicitly enable the vertex attribute array
 	 * since its disabled by default. we only have a single one so we can pass '0'.
@@ -158,6 +164,14 @@ int main(int argc, char *argv[])
 	 */
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
+	/* See how the positions 0 and 2 get reused */
+	unsigned int indices[] = {0, 1, 2,
+							  2, 3, 0};
+	unsigned int index_buffer_object;
+	glGenBuffers(1, &index_buffer_object);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_object);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+
 	Shader_program_source shader_program_source = parse_shader_file("res/shader/basic.shader");
 	unsigned int shader = create_shader(shader_program_source.vertex_source, shader_program_source.fragment_source);
 	glUseProgram(shader);
@@ -168,11 +182,8 @@ int main(int argc, char *argv[])
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		/* We want to draw TRIANGLES, 
-		 * start from index 0 and 
-		 * want to draw 3 indices in total 
-		 */
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		/* We want to draw two TRIANGLES to make up a square */
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
